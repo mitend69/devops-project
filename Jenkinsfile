@@ -4,7 +4,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git branch: 'main', url: 'YOUR_GITHUB_REPO_URL'
+                git branch: 'main', url: 'https://github.com/mitend69/devops-project.git
             }
         }
 
@@ -15,6 +15,7 @@ pipeline {
                 '''
             }
         }
+
     }
 
     post {
