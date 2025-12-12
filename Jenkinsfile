@@ -2,9 +2,14 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_REPO = "mitend69/devops-app"   // change if needed
-        IMAGE_TAG = "${BUILD_NUMBER}"
-    }
+    DOCKERHUB_USER = credentials('dockerhub-user')
+    DOCKERHUB_PASS = credentials('dockerhub-pass')
+    VERSION = "${BUILD_NUMBER}"
+    IMAGE_NAME = "mitend69/devops-app:${VERSION}"
+    LATEST_IMAGE = "mitend69/devops-app:latest"
+    PREVIOUS_VERSION = "${BUILD_NUMBER - 1}"
+    PREVIOUS_IMAGE = "mitend69/devops-app:${PREVIOUS_VERSION}"
+}
 
     stages {
 
@@ -42,9 +47,11 @@ pipeline {
 
         stage('Deploy with Ansible') {
             steps {
-                sh '''
-                ansible-playbook ansible/deploy.yml --extra-vars "image_tag=$IMAGE_TAG"
-                '''
+                sh """
+                ansible-playbook ansible/deploy.yml \
+                    -e docker_image=${IMAGE_NAME} \
+                    -e rollback_image=${PREVIOUS_IMAGE}
+                """
             }
         }
     }

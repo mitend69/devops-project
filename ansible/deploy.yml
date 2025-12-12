@@ -1,24 +1,52 @@
-- name: Deploy Node.js App container
-  hosts: docker
+---
+- name: Deploy Node.js App Container
+  hosts: all
   become: true
+  vars:
+    container_name: devops-app
+    image_name: "{{ docker_image }}"
 
   tasks:
-    - name: Stop existing container
-      shell: |
-        docker stop devops-app || true
-        docker rm devops-app || true
 
-    - name: Pull versioned image
+    - name: Pull new Docker image
       community.docker.docker_image:
-        name: "mitend69/devops-app:{{ image_tag }}"
-        pull: yes
+        name: "{{ image_name }}"
+        source: pull
 
-    - name: Run container
+    - name: Stop existing container (ignore errors)
       community.docker.docker_container:
-        name: devops-app
-        image: "mitend69/devops-app:{{ image_tag }}"
+        name: "{{ container_name }}"
+        state: stopped
+      ignore_errors: yes
+
+    - name: Remove existing container (ignore errors)
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        state: absent
+      ignore_errors: yes
+
+    - name: Start new container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
         state: started
-        restart_policy: always
         ports:
           - "3000:3000"
+      register: deploy_status
+      ignore_errors: yes
+
+    - name: ROLLBACK — Deploy previous version if failure occurs
+      when: deploy_status.failed
+      block:
+        - name: Start previous working container
+          community.docker.docker_container:
+            name: "{{ container_name }}"
+            image: "{{ rollback_image }}"
+            state: started
+            ports:
+              - "3000:3000"
+
+        - name: Rollback message
+          debug:
+            msg: "🔁 Deployment failed — rolled back to previous working version."
 
