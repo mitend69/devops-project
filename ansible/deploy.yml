@@ -1,18 +1,24 @@
----
-- name: Deploy Nginx container
-  hosts: docker_hosts
+- name: Deploy Node.js App container
+  hosts: docker
   become: true
+
   tasks:
+    - name: Stop existing container
+      shell: |
+        docker stop devops-app || true
+        docker rm devops-app || true
 
-    - name: Pull latest nginx image
-      docker_image:
-        name: nginx
-        source: pull
+    - name: Pull latest image
+      community.docker.docker_image:
+        name: mitend69/devops-app:latest
+        pull: yes
 
-    - name: Run nginx container
-      docker_container:
-        name: my-nginx
-        image: nginx
+    - name: Run container
+      community.docker.docker_container:
+        name: devops-app
+        image: mitend69/devops-app:latest
         state: started
+        restart_policy: always
         ports:
-          - "80:80"
+          - "3000:3000"
+

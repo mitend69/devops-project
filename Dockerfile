@@ -1,2 +1,13 @@
-FROM nginx:latest
-COPY app /usr/share/nginx/html
+FROM node:18-alpine
+
+WORKDIR /app
+
+COPY app/package*.json ./
+RUN npm install
+
+COPY app/ .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
+
