@@ -2,45 +2,42 @@ pipeline {
     agent any
 
     environment {
-    DOCKERHUB_USER = credentials('dockerhub-user')
-    DOCKERHUB_PASS = credentials('dockerhub-pass')
-    VERSION = "${BUILD_NUMBER}"
-    IMAGE_NAME = "mitend69/devops-app:${VERSION}"
-    LATEST_IMAGE = "mitend69/devops-app:latest"
-    PREVIOUS_VERSION = "${BUILD_NUMBER - 1}"
-    PREVIOUS_IMAGE = "mitend69/devops-app:${PREVIOUS_VERSION}"
-}
+        VERSION = "${BUILD_NUMBER}"
+        IMAGE_NAME = "mitend69/devops-app:${VERSION}"
+        LATEST_IMAGE = "mitend69/devops-app:latest"
+        PREVIOUS_IMAGE = "mitend69/devops-app:${BUILD_NUMBER - 1}"
+    }
 
     stages {
 
         stage('Build Docker Image') {
             steps {
-                sh '''
-                # Build versioned image
-                docker build -t $DOCKERHUB_REPO:$IMAGE_TAG .
-
-                # Tag versioned image as latest
-                docker tag $DOCKERHUB_REPO:$IMAGE_TAG $DOCKERHUB_REPO:latest
-                '''
+                script {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'dockerhub-user', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')
+                    ]) {
+                        sh """
+                        docker login -u $DOCKER_USER -p $DOCKER_PASS
+                        docker build -t ${IMAGE_NAME} .
+                        docker tag ${IMAGE_NAME} ${LATEST_IMAGE}
+                        """
+                    }
+                }
             }
         }
 
         stage('Push Images to Docker Hub') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub-credentials',
-                        usernameVariable: 'DOCKER_USERNAME',
-                        passwordVariable: 'DOCKER_PASSWORD'
-                    )
-                ]) {
-                    sh '''
-                    echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-
-                    # Push both versioned and latest tags
-                    docker push $DOCKERHUB_REPO:$IMAGE_TAG
-                    docker push $DOCKERHUB_REPO:latest
-                    '''
+                script {
+                    withCredentials([
+                        usernamePassword(credentialsId: 'dockerhub-user', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')
+                    ]) {
+                        sh """
+                        docker login -u $DOCKER_USER -p $DOCKER_PASS
+                        docker push ${IMAGE_NAME}
+                        docker push ${LATEST_IMAGE}
+                        """
+                    }
                 }
             }
         }
