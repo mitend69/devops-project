@@ -8,15 +8,15 @@
         docker stop devops-app || true
         docker rm devops-app || true
 
-    - name: Pull latest image
+    - name: Pull versioned image
       community.docker.docker_image:
-        name: mitend69/devops-app:latest
+        name: "mitend69/devops-app:{{ image_tag }}"
         pull: yes
 
     - name: Run container
       community.docker.docker_container:
         name: devops-app
-        image: mitend69/devops-app:latest
+        image: "mitend69/devops-app:{{ image_tag }}"
         state: started
         restart_policy: always
         ports:
