@@ -4,7 +4,7 @@
   "description": "Node.js app for CI/CD pipeline with Jenkins, Docker, and Ansible",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "node app.js",
     "test": "jest"
   },
   "author": "Miten",
